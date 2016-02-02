@@ -1,0 +1,189 @@
+---
+title: "Assignment-Part2"
+author: "Stephanie Lum"
+date: "January 31, 2016"
+output: pdf_document
+---
+
+##Overview
+This report conducts analyses on the ToothGrowth data in the R datasets package.
+
+This report will show:  
+1. A basic summary of the data  
+2. Basic exploratory data analyses   
+3. The use of confidence intervals and/or hypothesis tests to compare tooth growth by supplement and dosage  
+4. Assumptions and conclusions drawn from the tests and the data  
+
+```{r}
+# Load packages
+library(datasets)
+library(ggplot2)
+
+# Load data
+data("ToothGrowth")
+```
+
+##Basic Summary of the Data
+```{r}
+str(ToothGrowth)
+```
+
+This data frame has the measurements of 60 guinea pig subjects (rows) on 3 variables (columns).   
+The variables are described as follow (from the R Documentation file):  
+1. len = Tooth length, measured in length of odontoblasts  
+2. supp = Supplement type, ascorbic acid (VC) or orange juice (OJ)  
+3. dose = Dose in milligrams/day  
+
+
+```{r}
+head(ToothGrowth)
+```
+
+```{r}
+summary(ToothGrowth)
+```
+
+This histogram shows a distribution of the tooth lengths between all the subjects.
+```{r, echo=FALSE, fig.height=2, fig.align='left'}
+ggplot(ToothGrowth, aes(len)) +
+      geom_histogram(binwidth = 3) +
+      labs(title = "Tooth Growth Distribution") +
+      xlab("Tooth Length") +
+      ylab("Frequency")
+```
+
+##Basic Exploratory Analysis
+```{r, echo=FALSE, fig.height=2, fig.width=3.5}
+ggplot(ToothGrowth, aes(supp, len)) +
+      geom_boxplot(aes(fill = supp)) +
+      labs(title = "Length vs. Supplement") +
+      xlab("Supplement") +
+      ylab("Tooth Length") +
+      scale_fill_discrete(name="Supplement")
+
+ggplot(ToothGrowth, aes(supp, len)) +
+      geom_boxplot(aes(fill = supp)) +
+      facet_grid(.~dose) +
+      labs(title = "Length vs. Supplement (by Dose)") +
+      xlab("Supplement") + 
+      ylab("Tooth Length") +
+      scale_fill_discrete(name = "Supplement")
+
+ggplot(ToothGrowth, aes(factor(dose), len)) +
+      geom_boxplot(aes(fill = factor(dose))) +
+      labs(title = "Length vs. Dose") +
+      xlab("Dose") +
+      ylab("Tooth Length") +
+      scale_fill_discrete(name = "Dose")
+
+ggplot(ToothGrowth, aes(factor(dose), len)) +
+      geom_boxplot(aes(fill = factor(dose))) +
+      facet_grid(.~supp) +
+      labs(title = "Length vs. Dose (by Supplement)") +
+      xlab("Dose") +
+      ylab("Tooth Length") +
+      scale_fill_discrete(name = "Dose")
+```
+
+Based on the box plots, it can be initially inferred that a higher dosage of Vitamin C will promote more tooth growth. The supplement types do not seem to affect the tooth length as much as the dosage does. The calculations of confidence intervals and hypothesis testing will confirm or reject this inference.
+
+##Confidence Intervals and Hypothesis Testing
+The null hypothesis for this experiment is that the change in dosage and/or supplement will have no effect on the tooth length.  
+
+The alternative hypothesis for this experiement is that a change of supplement and/or a change in dosage will have an effect on the tooth length.
+
+###Comparing Supplement Types
+The first test will be to conduct a T-Test between the tooth length and the supplement type. It is assumed there are unequal variances between the two groups. The output for the T-Test can be found in the Appendix.
+```{R, eval = FALSE}
+t.test(len ~ supp, paired = FALSE, var.equal = FALSE, data = ToothGrowth)
+```
+The reported p-value is 0.06 and the confidence interval contains 0. Therefore, the null hypothesis that supplement type will affect tooth length should not be rejected. However, this test compared the supplement across all dosages. Further investigation between the dosages of different supplements and tooth length will need to be conducted. The output for the T-Tests can be found in the Appendix.
+```{R, eval=FALSE}
+# Subset the data into different dosages
+ToothGrowth_0.5 <- subset(ToothGrowth, dose == 0.5)
+ToothGrowth_1.0 <- subset(ToothGrowth, dose == 1.0)
+ToothGrowth_2.0 <- subset(ToothGrowth, dose == 2.0)
+
+# T-Test to Compare tooth length and supplement type at a dose of 0.5 mg/day
+t.test(len ~ supp, paired = FALSE, var.equal = FALSE, data = ToothGrowth_0.5)
+
+# T-Test to compare tooth length and supplement type at a dose of 1.0 mg/day
+t.test(len ~ supp, paired = FALSE, var.equal = FALSE, data = ToothGrowth_1.0)
+
+# T-Test to compare tooth length and supplement type at a dose of 2.0 mg/day
+t.test(len ~ supp, paired = FALSE, var.equal = FALSE, data = ToothGrowth_2.0)
+```
+The p-values for the first two T-Tests are well below 0.05, which means the null hypothesis that supplement type does not affect tooth length can be rejected at doses of 0.5 and 1.0 milligrams/day. From the means, it is evident that OJ is the better supplement at those doses. However, at 2.0 mg/day, both supplements are almost equally potent at promoting tooth growth.
+
+###Comparing Dosage Levels
+The next three tests will be to conduct T-Tests between the tooth length and different dosages of the supplements. Once again, it is assumed there are unequal variances between the groups. The output for the T-Tests can be found in the Appendix.
+```{R, eval = FALSE}
+# Subset the dosages into paired groupings based on supplement
+ToothGrowth_0.5_1.0 <- subset(ToothGrowth, dose == c(0.5, 1.0))
+ToothGrowth_1.0_2.0 <- subset(ToothGrowth, dose == c(1.0, 2.0))
+ToothGrowth_0.5_2.0 <- subset(ToothGrowth, dose == c(0.5, 2.0))
+
+# T-Test to compare a dose 0.5 mg/day to 1.0 mg/day
+t.test(len ~ dose, paired = FALSE, var.equal = FALSE, data = ToothGrowth_0.5_1.0)
+
+# T-Test to compare a dose of 1.0 mg/day to 2.0 mg/day
+t.test(len ~ dose, paired = FALSE, var.equal = FALSE, data = ToothGrowth_1.0_2.0)
+
+# T-Test to compare a dose of 0.5 mg/day to 2.0 mg/day
+t.test(len ~ dose, paired = FALSE, var.equal = FALSE, data = ToothGrowth_0.5_2.0)
+```
+The p-values for all three tests are well below 0.05, indicating that the null hypothesis that the dose level does not affect the tooth length can be rejected. 
+
+##Conclusion
+From the graphs and the tests conducted, it is clear that there is a correlation between the dose of Vitamin C given to the guinea pigs and their tooth length. What is less clear is the effect of the supplement type on the tooth length. However, there is indication that at the two lower dosages of 0.5 mg/day and 1.0 mg/day, orange juice (OJ) is more effective than ascorbic acid (VC) at promoting tooth growth.  
+
+Several assumptions were made during the course of this report:  
+1. The guinea pig subjects in this experiment represent the whole population of guinea pigs and that this is an unbiased sample with random assignment of dosages and supplement types.  
+2. The T-Test was the correct model to use for analysis of the p-value and confidence intervals.  
+3. The variances for the T-Tests were unequal.  
+
+
+
+-----
+#Appendix
+##T-Tests
+```{R}
+# T-Test to compare tooth length to supplement type
+t.test(len ~ supp, paired = FALSE, var.equal = FALSE, data = ToothGrowth)
+```
+```{R, echo = FALSE}
+# Subset the data into different dosages
+ToothGrowth_0.5 <- subset(ToothGrowth, dose == 0.5)
+ToothGrowth_1.0 <- subset(ToothGrowth, dose == 1.0)
+ToothGrowth_2.0 <- subset(ToothGrowth, dose == 2.0)
+```
+```{R}
+# T-Test to Compare tooth length and supplement type at a dose of 0.5 mg/day
+t.test(len ~ supp, paired = FALSE, var.equal = FALSE, data = ToothGrowth_0.5)
+```
+```{R}
+# T-Test to compare tooth length and supplement type at a dose of 1.0 mg/day
+t.test(len ~ supp, paired = FALSE, var.equal = FALSE, data = ToothGrowth_1.0)
+```
+```{R}
+# T-Test to compare tooth length and supplement type at a dose of 2.0 mg/day
+t.test(len ~ supp, paired = FALSE, var.equal = FALSE, data = ToothGrowth_2.0)
+```
+```{R, echo = FALSE}
+# Subset the dosages into paired groupings based on supplement
+ToothGrowth_0.5_1.0 <- subset(ToothGrowth, dose == c(0.5, 1.0))
+ToothGrowth_1.0_2.0 <- subset(ToothGrowth, dose == c(1.0, 2.0))
+ToothGrowth_0.5_2.0 <- subset(ToothGrowth, dose == c(0.5, 2.0))
+```
+```{R}
+# T-Test to compare a dose 0.5 mg/day to 1.0 mg/day
+t.test(len ~ dose, paired = FALSE, var.equal = FALSE, data = ToothGrowth_0.5_1.0)
+```
+```{R}
+# T-Test to compare a dose of 1.0 mg/day to 2.0 mg/day
+t.test(len ~ dose, paired = FALSE, var.equal = FALSE, data = ToothGrowth_1.0_2.0)
+```
+```{R}
+# T-Test to compare a dose of 0.5 mg/day to 2.0 mg/day
+t.test(len ~ dose, paired = FALSE, var.equal = FALSE, data = ToothGrowth_0.5_2.0)
+```
